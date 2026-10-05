@@ -1,0 +1,31 @@
+# Flight price alerts — edit this file to set what to watch.
+#
+# Secrets (NOT in this file): TRAVELPAYOUTS_TOKEN, NTFY_TOPIC, optional NTFY_TOKEN.
+
+currency: GBP                     # prices and max_price are in this currency
+market: uk                        # Travelpayouts market (uk, us, de, es, ...)
+skyscanner_domain: www.skyscanner.net   # where alert links open (e.g. www.skyscanner.com)
+
+searches:
+  # Example — replace with your own routes. Add as many entries as you like.
+  - name: London → Barcelona
+    origin: LON          # IATA airport or city code (LON = all London airports)
+    destination: BCN
+    month: 2026-12       # or months: [2026-12, 2027-01]
+    max_price: 60        # per person, in `currency`
+    trip: one-way        # one-way or return
+    # nights: [3, 7]     # return trips only: stay length range (or a single number)
+    direct_only: false
+    adults: 1            # only used for the Skyscanner link; prices are per person
+
+verification:
+  enabled: true              # re-check matches on Google Flights before alerting
+  max_checks_per_search: 8   # Google lookups per search per run
+  delay_seconds: 3           # pause between Google lookups
+  on_error: send             # if Google can't be checked: send (marked unverified) or skip
+
+notify:
+  server: https://ntfy.sh
+  max_deals_per_message: 5
+  renotify_drop_pct: 10      # re-alert a flight already sent only if it's 10%+ cheaper
+  high_priority_ratio: 0.75  # high-priority alert if cheapest ≤ 75% of max_price
