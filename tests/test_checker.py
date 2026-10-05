@@ -57,6 +57,7 @@ def test_config_defaults(tmp_path):
     cfg = load_config(write_config(tmp_path, ONE_WAY))
     s = cfg.searches[0]
     assert (s.origin, s.months, s.trip, s.adults) == ("LON", ["2026-11"], "one-way", 1)
+    assert cfg.markets == ["uk"]
     assert cfg.verification.enabled and cfg.notify.server == "https://ntfy.sh"
 
 
@@ -126,14 +127,15 @@ class FakeSession:
 def test_fetch_month_params_and_errors(tmp_path):
     cfg = load_config(write_config(tmp_path, RETURN))
     sess = FakeSession(FakeResp(200, {"success": True, "data": [row("2026-11-20", 10)]}))
-    rows = travelpayouts.fetch_month(cfg.searches[0], "2026-11", cfg, "tok", sess)
+    rows = travelpayouts.fetch_month(cfg.searches[0], "2026-11", cfg, "tok", "uk", sess)
     assert len(rows) == 1
     _, params, headers = sess.calls[0]
     assert params["departure_at"] == "2026-11" and params["one_way"] == "false"
-    assert params["currency"] == "gbp" and headers["X-Access-Token"] == "tok"
+    assert params["currency"] == "gbp" and params["market"] == "uk"
+    assert headers["X-Access-Token"] == "tok"
 
     with pytest.raises(travelpayouts.TravelpayoutsError):
-        travelpayouts.fetch_month(cfg.searches[0], "2026-11", cfg, "tok",
+        travelpayouts.fetch_month(cfg.searches[0], "2026-11", cfg, "tok", "uk",
                                   FakeSession(FakeResp(401, {"error": "bad token"})))
 
 
@@ -273,3 +275,21 @@ def test_past_months_skipped(wired):
     main.run(cfg, st, tp_token="t", topic="x", ntfy_token=None, dry_run=False,
              today=date(2026, 12, 1))
     assert sent == []
+
+
+def test_markets_combined_and_partial_failure(monkeypatch, tmp_path):
+    cfg = load_config(write_config(tmp_path, ONE_WAY, "\nmarkets: [us, ru]\n"))
+    assert cfg.markets == ["us", "ru"]
+    s = cfg.searches[0]
+
+    def fetch(search, month, cfg, token, market):
+        if market == "ru":
+            raise travelpayouts.TravelpayoutsError("HTTP 500")
+        return [row("2026-11-20", 45)]
+
+    monkeypatch.setattr(travelpayouts, "fetch_month", fetch)
+    assert len(main.find_deals(s, cfg, "t", TODAY)) == 1
+
+    cfg.markets = ["ru"]
+    with pytest.raises(travelpayouts.TravelpayoutsError):
+        main.find_deals(s, cfg, "t", TODAY)

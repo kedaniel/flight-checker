@@ -2,21 +2,44 @@
 #
 # Secrets (NOT in this file): TRAVELPAYOUTS_TOKEN, NTFY_TOPIC, optional NTFY_TOKEN.
 
-currency: GBP                     # prices and max_price are in this currency
-market: uk                        # Travelpayouts market (uk, us, de, es, ...)
-skyscanner_domain: www.skyscanner.net   # where alert links open (e.g. www.skyscanner.com)
+currency: EGP                     # prices and max_price are in this currency
+# Travelpayouts keeps separate price data per market (roughly: which country's site
+# people searched on). Several are combined for better coverage.
+markets: [us, ru]
+skyscanner_domain: www.skyscanner.net   # where alert links open
 
+# Same trip from each departure city. A flight counts if it leaves any day in
+# December 2026 and returns 5–8 nights later; direct and connecting flights both count.
 searches:
-  # Example — replace with your own routes. Add as many entries as you like.
-  - name: London → Barcelona
-    origin: LON          # IATA airport or city code (LON = all London airports)
-    destination: BCN
-    month: 2026-12       # or months: [2026-12, 2027-01]
-    max_price: 60        # per person, in `currency`
-    trip: one-way        # one-way or return
-    # nights: [3, 7]     # return trips only: stay length range (or a single number)
+  - name: Cairo → Istanbul
+    origin: CAI          # Cairo International
+    destination: IST     # Istanbul city code: covers both IST and Sabiha Gökçen (SAW)
+    month: 2026-12
+    max_price: 12000     # per person, return, in EGP
+    trip: return
+    nights: [5, 8]
     direct_only: false
-    adults: 1            # only used for the Skyscanner link; prices are per person
+    adults: 1
+
+  - name: Giza → Istanbul
+    origin: SPX          # Sphinx International (Giza)
+    destination: IST
+    month: 2026-12
+    max_price: 12000
+    trip: return
+    nights: [5, 8]
+    direct_only: false
+    adults: 1
+
+  - name: Alexandria → Istanbul
+    origin: HBE          # Borg El Arab (Alexandria)
+    destination: IST
+    month: 2026-12
+    max_price: 12000
+    trip: return
+    nights: [5, 8]
+    direct_only: false
+    adults: 1
 
 verification:
   enabled: true              # re-check matches on Google Flights before alerting

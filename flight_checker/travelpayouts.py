@@ -22,7 +22,8 @@ class TravelpayoutsError(RuntimeError):
 
 
 def fetch_month(
-    search: Search, month: str, cfg: Config, token: str, session: requests.Session | None = None
+    search: Search, month: str, cfg: Config, token: str, market: str,
+    session: requests.Session | None = None,
 ) -> list[dict]:
     params = {
         "origin": search.origin,
@@ -31,7 +32,7 @@ def fetch_month(
         "one_way": "false" if search.is_return else "true",
         "direct": "true" if search.direct_only else "false",
         "currency": cfg.currency.lower(),
-        "market": cfg.market,
+        "market": market,
         "sorting": "price",
         "unique": "false",
         "limit": 1000,

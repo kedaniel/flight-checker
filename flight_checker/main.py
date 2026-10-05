@@ -32,7 +32,18 @@ def find_deals(search: Search, cfg: Config, token: str, today: date) -> list[Dea
         if month < current_month:
             log.info("[%s] %s is in the past, skipping", search.name, month)
             continue
-        rows = travelpayouts.fetch_month(search, month, cfg, token)
+        # Prices are cached per market (where the searches came from), so combine
+        # several markets for better coverage. Fail only if every market fails.
+        rows: list[dict] = []
+        errors: list[str] = []
+        for market in cfg.markets:
+            try:
+                rows.extend(travelpayouts.fetch_month(search, month, cfg, token, market))
+            except travelpayouts.TravelpayoutsError as e:
+                log.warning("[%s] %s market %s: %s", search.name, month, market, e)
+                errors.append(f"{market}: {e}")
+        if len(errors) == len(cfg.markets):
+            raise travelpayouts.TravelpayoutsError("; ".join(errors))
         found = travelpayouts.to_deals(rows, search, today)
         log.info("[%s] %s: %d prices from Travelpayouts, %d under %s",
                  search.name, month, len(rows), len(found), search.max_price)

@@ -46,7 +46,7 @@ Scheduled runs then happen every 6 hours. Change the `cron` line in
 
 ```yaml
 currency: GBP
-market: uk
+markets: [uk]
 skyscanner_domain: www.skyscanner.net
 
 searches:

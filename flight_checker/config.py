@@ -57,7 +57,7 @@ class Notify:
 @dataclass
 class Config:
     currency: str
-    market: str
+    markets: list[str]
     skyscanner_domain: str
     searches: list[Search]
     verification: Verification = field(default_factory=Verification)
@@ -126,6 +126,13 @@ def _parse_search(raw: dict, idx: int) -> Search:
     )
 
 
+def _parse_markets(raw: dict) -> list[str]:
+    markets = raw.get("markets") or raw.get("market") or "us"
+    if isinstance(markets, str):
+        markets = [markets]
+    return [str(m).lower() for m in markets]
+
+
 def load_config(path: str | Path) -> Config:
     with open(path, encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
@@ -140,7 +147,7 @@ def load_config(path: str | Path) -> Config:
 
     return Config(
         currency=str(raw.get("currency", "USD")).upper(),
-        market=str(raw.get("market", "us")).lower(),
+        markets=_parse_markets(raw),
         skyscanner_domain=str(raw.get("skyscanner_domain", "www.skyscanner.net")),
         searches=[_parse_search(s, i) for i, s in enumerate(searches_raw)],
         verification=verification,
